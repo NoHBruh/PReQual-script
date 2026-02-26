@@ -75,7 +75,7 @@ func main() {
 
 			formattedRepo := strings.Replace(repo, "/", "-", -1)
 
-			err := analyzer.AnalyzeProject(formattedRepo, path)
+			err := analyzer.AnalyzeProject(formattedRepo, path, metrics)
 			if err != nil {
 				fmt.Printf("Error analyzing pull requests: %v\n", err)
 				return

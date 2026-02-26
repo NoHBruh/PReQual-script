@@ -3,17 +3,19 @@ package metric
 import (
 	"PReQual/compilation"
 	"PReQual/helper"
+	"PReQual/model"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 type SonarQubeAnalyzer struct{}
 
-func (a *SonarQubeAnalyzer) AnalyzeProject(repoName string, path string) error {
+func (a *SonarQubeAnalyzer) AnalyzeProject(repoName string, path string, metrics []string) error {
 	files := []string{"base.zip", "head.zip"}
 
 	var compiler compilation.Compiler
@@ -56,6 +58,16 @@ func (a *SonarQubeAnalyzer) AnalyzeProject(repoName string, path string) error {
 		if err := runSonarScanner(projectRoot); err != nil {
 			return err
 		}
+
+		var data model.SonarMeasures
+
+		data, err = retrieveSonarMetrics(projectName, metrics)
+		if err != nil {
+			return err
+		}
+
+		helper.WriteSonarMeasuresJSON(path, data)
+
 	}
 
 	return nil
@@ -78,4 +90,25 @@ func runSonarScanner(path string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func retrieveSonarMetrics(projectName string, metrics []string) (model.SonarMeasures, error) {
+	sonarURL := os.Getenv("SONAR_URL")
+	sonarToken := os.Getenv("SONAR_TOKEN")
+
+	client := helper.NewHTTPClient(sonarURL, sonarToken)
+
+	path := fmt.Sprintf(
+		"/api/measures/component?metricKeys=%s&component=%s",
+		strings.Join(metrics, ","),
+		projectName,
+	)
+
+	var resp model.SonarMeasures
+
+	if err := client.DoRequest("GET", path, nil, &resp); err != nil {
+		return model.SonarMeasures{}, err
+	}
+
+	return resp, nil
 }
