@@ -47,7 +47,7 @@ sonar.projectName=%s
 sonar.sources=.
 sonar.sourceEncoding=UTF-8
 %s
-sonar.host.url=http://sonarqube:9000
+sonar.host.url=http://prequal-sonarqube:9000
 sonar.login=${SONAR_TOKEN}
 `, projectName, projectName, binaries)
 

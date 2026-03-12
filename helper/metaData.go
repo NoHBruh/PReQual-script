@@ -14,7 +14,7 @@ func WriteMetaDataFile(path string, pr model.PullRequest) {
 
 func writeCommentsMetaFile(path string, pr model.PullRequest) {
 	type CommentJSON struct {
-		CreatedAt string `json:"createdAt"`
+		CreatedAt string `json:"created_at"`
 		Body      string `json:"body"`
 	}
 

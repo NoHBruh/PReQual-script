@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -59,6 +60,10 @@ func (a *SonarQubeAnalyzer) AnalyzeProject(repoName string, path string, metrics
 			return err
 		}
 
+		if err := waitForAnalysisCompletion(projectName, len(metrics), 5*time.Minute); err != nil {
+			return err
+		}
+
 		var data model.SonarMeasures
 
 		data, err = retrieveSonarMetrics(projectName, metrics)
@@ -66,11 +71,43 @@ func (a *SonarQubeAnalyzer) AnalyzeProject(repoName string, path string, metrics
 			return err
 		}
 
-		helper.WriteSonarMeasuresJSON(path, projectName, data)
+		filePath := filepath.Join(path, zipName[:len(zipName)-4]+"_metrics.json")
+		helper.WriteSonarMeasuresJSON(filePath, data)
 
 	}
 
 	return nil
+}
+
+func waitForAnalysisCompletion(projectName string, numberOfMetrics int, timeout time.Duration) error {
+	sonarURL := os.Getenv("SONAR_URL")
+	sonarToken := os.Getenv("SONAR_TOKEN")
+	client := helper.NewHTTPClient(sonarURL, sonarToken)
+
+	deadline := time.Now().Add(timeout)
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			path := fmt.Sprintf("/api/measures/component?metricKeys=ncloc&component=%s", projectName)
+
+			var resp model.SonarMeasures
+			err := client.DoRequest("GET", path, nil, &resp)
+
+			if err == nil && len(resp.Component.Measures) != numberOfMetrics {
+				return nil
+			}
+
+			if time.Now().After(deadline) {
+				return fmt.Errorf("timeout after %v waiting for analysis completion", timeout)
+			}
+
+		case <-time.After(timeout):
+			return fmt.Errorf("timeout waiting for analysis completion")
+		}
+	}
 }
 
 func runSonarScanner(path string) error {
@@ -81,7 +118,7 @@ func runSonarScanner(path string) error {
 
 	cmd := exec.Command(
 		"docker", "run", "--rm",
-		"--network", "sonar-net",
+		"--network", "prequal-sonar-net",
 		"-v", absPath+":/usr/src",
 		"-e", "SONAR_TOKEN="+os.Getenv("SONAR_TOKEN"),
 		"sonarsource/sonar-scanner-cli",

@@ -14,7 +14,7 @@ The docker container will be launch automatically by the script during the analy
 ### 2 - Setup a Docker network
 
 ```bash
-docker network create sonar-net
+docker network create prequal-sonar-net
 ```
 
 ### 3 - SonarQube
@@ -24,7 +24,7 @@ docker network create sonar-net
 docker pull sonarqube
 
 # Run the image
-docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 --network=sonar-net sonarqube:latest
+docker run -d --name prequal-sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 --network=prequal-sonar-net sonarqube:latest
 ```
 
 Once the image is running, the admin password must be reset by going on Sonar's [main page](http://localhost:9000). 

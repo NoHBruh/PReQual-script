@@ -51,13 +51,14 @@ func (c *HTTPClient) DoRequest(method, path string, body interface{}, result int
 	}
 	defer resp.Body.Close()
 
+	data, _ := io.ReadAll(resp.Body)
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		data, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("status %d: %s", resp.StatusCode, string(data))
 	}
 
 	if result != nil {
-		if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		if err := json.Unmarshal(data, result); err != nil {
 			return fmt.Errorf("decode response: %w", err)
 		}
 	}
