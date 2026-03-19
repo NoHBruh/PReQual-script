@@ -2,6 +2,7 @@ package helper
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -85,4 +86,34 @@ func FindProjectRoot(path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func FormatSizeRounded(paths []string) string {
+	const (
+		KB = 1024
+		MB = 1024 * KB
+		GB = 1024 * MB
+	)
+	var size int64
+	for _, path := range paths {
+		size += getFileSize(path)
+	}
+
+	if size >= GB {
+		return fmt.Sprintf("%.1f GB", float64(size)/float64(GB))
+	} else if size >= MB {
+		return fmt.Sprintf("%.1f MB", float64(size)/float64(MB))
+	} else if size >= KB {
+		return fmt.Sprintf("%.1f KB", float64(size)/float64(KB))
+	} else {
+		return fmt.Sprintf("%d B", size)
+	}
+}
+
+func getFileSize(path string) int64 {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return info.Size()
 }

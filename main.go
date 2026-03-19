@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"PReQual/client"
 	"PReQual/helper"
@@ -60,6 +61,7 @@ func main() {
 		}
 
 		for _, pr := range prs {
+			var startTime = time.Now()
 			fmt.Printf("PR #%d: %s (Base: %s, Head: %s)\n", pr.Number, pr.Title, pr.BaseRefOid, pr.HeadRefOid)
 
 			var path = fmt.Sprintf("%s/%s/pr_%d", *workspace, repo, pr.Number)
@@ -76,6 +78,13 @@ func main() {
 			formattedRepo := strings.Replace(repo, "/", "-", -1)
 
 			err := analyzer.AnalyzeProject(formattedRepo, path, metrics)
+			var totalDuration = helper.FormatDuration(time.Since(startTime))
+			var totalSize = helper.FormatSizeRounded([]string{path + "/head.zip", path + "/base.zip"})
+			var baseSize = helper.FormatSizeRounded([]string{path + "/base.zip"})
+			var headSize = helper.FormatSizeRounded([]string{path + "/head.zip"})
+			fmt.Printf("End of the PR #%d's analysis.\n", pr.Number)
+			fmt.Printf("Total ZIP files size : %s (base.zip: %s ; head.zip %s).\n", totalSize, baseSize, headSize)
+			fmt.Printf("Total duration of the PR's analysis : %s.\n", totalDuration)
 			if err != nil {
 				fmt.Printf("Error analyzing pull requests: %v\n", err)
 				return
