@@ -36,15 +36,21 @@ func InsertPR(org string, repo string, pr model.PullRequest, headMetrics map[str
 	// Construire l'ID unique
 	prID := fmt.Sprintf("%s_%s_pr%d", org, repo, pr.Number)
 
+	comments := formatComments(pr)
+	reviews := formatReviews(pr)
+
 	// Document complet
 	prDoc := bson.M{
 		"_id":  prID,
 		"org":  org,
 		"repo": repo,
 		"meta": bson.M{
-			"id":         pr.Id,
-			"number":     pr.Number,
-			"author":     pr.Author,
+			"id":     pr.Id,
+			"number": pr.Number,
+			"author": bson.M{
+				"login":  pr.Author.Login,
+				"is_bot": pr.Author.IsBot,
+			},
 			"title":      pr.Title,
 			"body":       pr.Body,
 			"state":      pr.State,
@@ -53,8 +59,8 @@ func InsertPR(org string, repo string, pr model.PullRequest, headMetrics map[str
 		},
 		"head":     headMetrics,
 		"base":     baseMetrics,
-		"comments": pr.Comments,
-		"reviews":  pr.Reviews,
+		"comments": comments,
+		"reviews":  reviews,
 		"stats": bson.M{
 			"total_time": stats.TotalTime,
 			"base_size":  stats.BaseSize,
@@ -72,4 +78,39 @@ func InsertPR(org string, repo string, pr model.PullRequest, headMetrics map[str
 	if err != nil {
 		log.Printf("MongoDB error inserting PR %d: %v", pr.Number, err)
 	}
+}
+
+func formatReviews(pr model.PullRequest) []bson.M {
+	reviews := []bson.M{}
+
+	for _, r := range pr.Reviews {
+		reviews = append(reviews, bson.M{
+			"author": bson.M{
+				"login":  r.Author.Login,
+				"is_bot": r.Author.IsBot,
+			},
+			"state":        r.State,
+			"body":         r.Body,
+			"submitted_at": r.SubmittedAt,
+		})
+	}
+
+	return reviews
+}
+
+func formatComments(pr model.PullRequest) []bson.M {
+	comments := []bson.M{}
+
+	for _, c := range pr.Comments {
+		comments = append(comments, bson.M{
+			"author": bson.M{
+				"login":  c.Author.Login,
+				"is_bot": c.Author.IsBot,
+			},
+			"body":       c.Body,
+			"created_at": c.CreatedAt,
+		})
+	}
+
+	return comments
 }
