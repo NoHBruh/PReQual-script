@@ -105,7 +105,7 @@ func processPR(
 	}
 
 	stats := model.AnalysisStat{
-		TotalTime: helper.FormatDuration(time.Since(start)),
+		TotalTime: int(time.Since(start).Seconds()),
 		BaseSize:  helper.FormatSizeRounded([]string{path + "/base.zip"}),
 		HeadSize:  helper.FormatSizeRounded([]string{path + "/head.zip"}),
 	}

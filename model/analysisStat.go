@@ -1,7 +1,7 @@
 package model
 
 type AnalysisStat struct {
-	TotalTime string
-	BaseSize  string
-	HeadSize  string
+	TotalTime int
+	BaseSize  int
+	HeadSize  int
 }
