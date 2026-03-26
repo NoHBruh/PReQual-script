@@ -110,7 +110,7 @@ func waitForAnalysisCompletion(
 	)
 
 	deadline := time.Now().Add(timeout)
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -126,6 +126,7 @@ func waitForAnalysisCompletion(
 		)
 
 		if err := client.DoRequest("GET", path, nil, &resp); err == nil {
+			fmt.Sprintf("Waiting again %d metric(s) from Sonar Analysis...", len(metrics)-len(resp.Component.Measures))
 			if len(resp.Component.Measures) == len(metrics) {
 				return nil
 			}
